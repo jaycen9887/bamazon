@@ -54,7 +54,6 @@ function start(){
         }
     ]).then(function(result){
         var itemBuying = fullItems[result.buying[0] - 1];
-        console.log(itemBuying);
         var itemQuantity = result.quantity;
         if(itemQuantity > itemBuying.stock_quantity) {
             console.log("Insufficient Quantity: Try again.");
@@ -62,9 +61,22 @@ function start(){
         }else {
             var endQuantity = itemBuying.stock_quantity - itemQuantity;
             var total = itemQuantity * itemBuying.price;
-            connection.query("UPDATE products set stock_quantity = " + endQuantity + " WHERE item_id = " + itemBuying.item_id, function(err, result){
+            connection.query("UPDATE products set stock_quantity = " + endQuantity + " WHERE item_id = '" + itemBuying.item_id + "'", function(err, result){
                 if(err) throw err;
-                console.log("Total Purchase: $" + total);
+                console.log("Transaction Complete!");
+                console.log("Your Total Purchase: $" + total);
+                
+                connection.query("SELECT product_sales FROM departments WHERE department_name ='" + itemBuying.department_name.trim() + "'", function(err, result){
+                    if(err) throw(err);
+                    var newProduct_sales = parseFloat(result[0].product_sales) + total;
+                    //console.log(result[0].product_sales);
+                    connection.query("UPDATE departments SET product_sales =" + newProduct_sales + " WHERE department_name ='" + itemBuying.department_name.trim() + "'", function(err, result){
+                        if(err) throw(err);
+                        console.log("Update Complete");
+                        connection.end();
+                    });
+                });
+                
             });
         }
     });
